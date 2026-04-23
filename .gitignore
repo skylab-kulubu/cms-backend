@@ -1,0 +1,11 @@
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+**/Migrations/
+
+appsettings.*.json
+!appsettings.Development.json
+*.env
+.env
