@@ -66,6 +66,23 @@ public sealed class ContentBlock : Entity
         Version += 1;
     }
 
+    public bool UpdateDefinition(BlockType blockType, int sortOrder, string updatedBy, DateTime utcNow)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);
+
+        if (BlockType == blockType && SortOrder == sortOrder)
+        {
+            return false;
+        }
+
+        BlockType = blockType;
+        SortOrder = sortOrder;
+        UpdatedBy = updatedBy;
+        UpdatedAt = utcNow;
+        Version += 1;
+        return true;
+    }
+
     public void Archive(string updatedBy, DateTime utcNow)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);

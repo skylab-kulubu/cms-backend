@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Skylab.Cms.Application.Common;
+namespace Skylab.Cms.Application.Services.Helpers;
 
 public static class SlugNormalizer
 {
