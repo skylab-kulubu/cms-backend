@@ -3,6 +3,7 @@ using Skylab.Cms.Application.Contracts.Requests;
 using Skylab.Cms.Application.Contracts.Responses;
 using Skylab.Cms.Application.Services.Helpers;
 using Skylab.Cms.Domain.Entities;
+using Skylab.Cms.Domain.Enums;
 using Skylab.Cms.Domain.Exceptions;
 
 namespace Skylab.Cms.Application.Services;
@@ -33,6 +34,25 @@ public sealed class ContentService : IContentService
             )).ToList();
 
         return new ContentResponse(normalizedSlug, blockResponses);
+    }
+
+    public async Task<ContentResponse> GetDataBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = SlugNormalizer.NormalizeSlug(slug);
+
+        var blocks = await _repository.GetBySlugAsync(normalizedSlug, cancellationToken: cancellationToken);
+
+        var dataBlocks = blocks.Where(block => block.BlockType == BlockType.DataSource)
+            .Select(block => new BlockResponse(
+                BlockPath: block.BlockPath,
+                BlockType: block.BlockType.ToString(),
+                Value: block.Value,
+                SortOrder: block.SortOrder,
+                Version: block.Version,
+                Data: null))
+            .ToList();
+
+        return new ContentResponse(normalizedSlug, dataBlocks);
     }
 
     public async Task<UpdatePageResponse> UpdatePageAsync(UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default)
@@ -66,9 +86,7 @@ public sealed class ContentService : IContentService
         }
 
         if (updated > 0)
-        {
             await _repository.SaveChangesAsync(cancellationToken);
-        }
 
         return new UpdatePageResponse(updated, unchanged);
     }
