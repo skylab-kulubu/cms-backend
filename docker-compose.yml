@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "5000:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__Default=Host=db;Port=5432;Database=skylab_cms;Username=postgres;Password=${DB_PASSWORD}

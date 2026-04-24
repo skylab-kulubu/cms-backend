@@ -32,8 +32,14 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
 
         builder.Property(x => x.UpdatedAt).IsRequired().HasDefaultValueSql("now() at time zone 'utc'");
 
+        builder.Property(x => x.IsArchived).IsRequired().HasDefaultValue(false);
+
+        builder.Property(x => x.ArchivedAt);
+
         builder.HasIndex(x => new { x.Slug, x.BlockPath }).IsUnique();
 
         builder.HasIndex(x => x.Slug);
+
+        builder.HasQueryFilter(x => !x.IsArchived);
     }
 }

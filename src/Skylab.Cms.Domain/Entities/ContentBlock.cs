@@ -11,6 +11,8 @@ public sealed class ContentBlock : Entity
     public JsonNode Value { get; private set; } = default!;
     public int SortOrder { get; private set; }
     public string UpdatedBy { get; private set; } = default!;
+    public bool IsArchived { get; private set; }
+    public DateTime? ArchivedAt { get; private set; }
 
     private ContentBlock() { }
 
@@ -59,6 +61,38 @@ public sealed class ContentBlock : Entity
         ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);
 
         SortOrder = sortOrder;
+        UpdatedBy = updatedBy;
+        UpdatedAt = utcNow;
+        Version += 1;
+    }
+
+    public void Archive(string updatedBy, DateTime utcNow)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);
+
+        if (IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = true;
+        ArchivedAt = utcNow;
+        UpdatedBy = updatedBy;
+        UpdatedAt = utcNow;
+        Version += 1;
+    }
+
+    public void Restore(string updatedBy, DateTime utcNow)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);
+
+        if (!IsArchived)
+        {
+            return;
+        }
+
+        IsArchived = false;
+        ArchivedAt = null;
         UpdatedBy = updatedBy;
         UpdatedAt = utcNow;
         Version += 1;
