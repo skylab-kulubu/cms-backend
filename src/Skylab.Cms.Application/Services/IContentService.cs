@@ -5,11 +5,11 @@ namespace Skylab.Cms.Application.Services;
 
 public interface IContentService
 {
-    Task<ContentResponse> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<ContentResponse> GetBySlugAsync(string clientId, string slug, CancellationToken cancellationToken = default);
 
-    Task<ContentResponse> GetDataBySlugAsync(string slug, CancellationToken cancellationToken = default);
+    Task<ContentResponse> GetDataBySlugAsync(string clientId, string slug, CancellationToken cancellationToken = default);
 
-    Task<UpdatePageResponse> UpdatePageAsync(UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default);
+    Task<UpdatePageResponse> UpdatePageAsync(string clientId, UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default);
 
-    Task<SyncResultResponse> SyncAsync(SyncManifestRequest request, string syncedBy, CancellationToken cancellationToken = default);
+    Task<SyncResultResponse> SyncAsync(string clientId, SyncManifestRequest request, string syncedBy, CancellationToken cancellationToken = default);
 }

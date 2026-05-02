@@ -17,11 +17,11 @@ public sealed class ContentService : IContentService
         _repository = repository;
     }
 
-    public async Task<ContentResponse> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<ContentResponse> GetBySlugAsync(string clientId, string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeSlug(slug);
 
-        var blocks = await _repository.GetBySlugAsync(normalizedSlug, cancellationToken: cancellationToken);
+        var blocks = await _repository.GetBySlugAsync(clientId, normalizedSlug, cancellationToken: cancellationToken);
 
         var blockResponses = blocks
             .Select(block => new BlockResponse(
@@ -36,11 +36,11 @@ public sealed class ContentService : IContentService
         return new ContentResponse(normalizedSlug, blockResponses);
     }
 
-    public async Task<ContentResponse> GetDataBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<ContentResponse> GetDataBySlugAsync(string clientId, string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeSlug(slug);
 
-        var blocks = await _repository.GetBySlugAsync(normalizedSlug, cancellationToken: cancellationToken);
+        var blocks = await _repository.GetBySlugAsync(clientId, normalizedSlug, cancellationToken: cancellationToken);
 
         var dataBlocks = blocks.Where(block => block.BlockType == BlockType.DataSource)
             .Select(block => new BlockResponse(
@@ -55,11 +55,11 @@ public sealed class ContentService : IContentService
         return new ContentResponse(normalizedSlug, dataBlocks);
     }
 
-    public async Task<UpdatePageResponse> UpdatePageAsync(UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default)
+    public async Task<UpdatePageResponse> UpdatePageAsync(string clientId, UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeSlug(request.Slug);
 
-        var blocks = await _repository.GetBySlugAsync(normalizedSlug, cancellationToken: cancellationToken);
+        var blocks = await _repository.GetBySlugAsync(clientId, normalizedSlug, cancellationToken: cancellationToken);
         var blocksByPath = blocks.ToDictionary(b => b.BlockPath);
 
         var updated = 0;
@@ -72,7 +72,7 @@ public sealed class ContentService : IContentService
 
             if (!blocksByPath.TryGetValue(blockPath, out var block))
                 throw new NotFoundException($"Block '{blockPath}' not found for slug '{normalizedSlug}'.");
-            
+
             if (block.Value.ToJsonString() == item.Value.ToJsonString())
             {
                 unchanged++; continue;
@@ -91,12 +91,12 @@ public sealed class ContentService : IContentService
         return new UpdatePageResponse(updated, unchanged);
     }
 
-    public async Task<SyncResultResponse> SyncAsync(SyncManifestRequest request, string syncedBy, CancellationToken cancellationToken = default)
+    public async Task<SyncResultResponse> SyncAsync(string clientId, SyncManifestRequest request, string syncedBy, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeSlug(request.Slug);
         var utcNow = DateTime.UtcNow;
 
-        var existing = await _repository.GetBySlugAsync(normalizedSlug, cancellationToken: cancellationToken);
+        var existing = await _repository.GetBySlugAsync(clientId, normalizedSlug, cancellationToken: cancellationToken);
         var existingByPath = existing.ToDictionary(b => b.BlockPath);
 
         var manifestByPath = request.Blocks.ToDictionary(b => SlugNormalizer.NormalizeBlockPath(b.BlockPath));
@@ -108,6 +108,7 @@ public sealed class ContentService : IContentService
                 continue;
 
             toCreate.Add(ContentBlock.Create(
+                clientId,
                 normalizedSlug,
                 blockPath,
                 item.BlockType,

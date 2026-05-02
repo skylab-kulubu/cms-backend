@@ -13,7 +13,7 @@ internal sealed class ContentBlockRepository : IContentBlockRepository
         _context = context;
     }
 
-    public async Task<IReadOnlyList<ContentBlock>> GetBySlugAsync(string slug, bool includeArchived = false, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ContentBlock>> GetBySlugAsync(string clientId, string slug, bool includeArchived = false, CancellationToken cancellationToken = default)
     {
         var query = _context.ContentBlocks.AsQueryable();
 
@@ -22,7 +22,10 @@ internal sealed class ContentBlockRepository : IContentBlockRepository
             query = query.IgnoreQueryFilters();
         }
 
-        return await query.Where(x => x.Slug == slug).OrderBy(x => x.SortOrder).ToListAsync(cancellationToken);
+        return await query
+            .Where(x => x.ClientId == clientId && x.Slug == slug)
+            .OrderBy(x => x.SortOrder)
+            .ToListAsync(cancellationToken);
     }
 
     public Task AddRangeAsync(IEnumerable<ContentBlock> blocks, CancellationToken cancellationToken = default)

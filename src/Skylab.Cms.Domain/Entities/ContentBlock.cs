@@ -5,6 +5,7 @@ namespace Skylab.Cms.Domain.Entities;
 
 public sealed class ContentBlock : Entity
 {
+    public string ClientId { get; private set; } = default!;
     public string Slug { get; private set; } = default!;
     public string BlockPath { get; private set; } = default!;
     public BlockType BlockType { get; private set; }
@@ -17,6 +18,7 @@ public sealed class ContentBlock : Entity
     private ContentBlock() { }
 
     public static ContentBlock Create(
+        string clientId,
         string slug,
         string blockPath,
         BlockType blockType,
@@ -25,6 +27,7 @@ public sealed class ContentBlock : Entity
         string updatedBy,
         DateTime utcNow)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         ArgumentException.ThrowIfNullOrWhiteSpace(blockPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(updatedBy);
@@ -33,6 +36,7 @@ public sealed class ContentBlock : Entity
         return new ContentBlock
         {
             Id = Guid.NewGuid(),
+            ClientId = clientId,
             Slug = slug,
             BlockPath = blockPath,
             BlockType = blockType,

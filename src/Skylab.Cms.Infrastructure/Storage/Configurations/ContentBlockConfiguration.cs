@@ -12,7 +12,9 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id).ValueGeneratedOnAdd().HasDefaultValueSql("gen_random_uuid()");
+        builder.Property(x => x.Id).ValueGeneratedOnAdd().HasDefaultValueSql("gen_random_uuid()").HasColumnOrder(0);
+
+        builder.Property(x => x.ClientId).IsRequired().HasMaxLength(256).HasColumnOrder(1);
 
         builder.Property(x => x.Slug).IsRequired().HasMaxLength(512);
 
@@ -36,9 +38,9 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
 
         builder.Property(x => x.ArchivedAt);
 
-        builder.HasIndex(x => new { x.Slug, x.BlockPath }).IsUnique();
+        builder.HasIndex(x => new { x.ClientId, x.Slug, x.BlockPath }).IsUnique();
 
-        builder.HasIndex(x => x.Slug);
+        builder.HasIndex(x => new { x.ClientId, x.Slug });
 
         builder.HasQueryFilter(x => !x.IsArchived);
     }
