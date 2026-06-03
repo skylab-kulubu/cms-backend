@@ -22,6 +22,7 @@ var keycloakSection = builder.Configuration.GetSection("Keycloak");
 var requireHttpsMetadata = keycloakSection.GetValue("RequireHttpsMetadata", true);
 var keycloakAuthority = keycloakSection["Authority"];
 var keycloakMetadataAddress = keycloakSection["MetadataAddress"];
+var keycloakRolesResource = keycloakSection["RolesResource"] ?? keycloakSection["Audience"];
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -48,16 +49,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (ctx.Principal?.Identity is not ClaimsIdentity identity)
                     return Task.CompletedTask;
 
-                var azp = ctx.Principal.FindFirst("azp")?.Value;
                 var resourceAccessJson = ctx.Principal.FindFirst("resource_access")?.Value;
                 var realmAccessJson = ctx.Principal.FindFirst("realm_access")?.Value;
 
                 try
                 {
-                    if (azp is not null && resourceAccessJson is not null)
+                    if (keycloakRolesResource is not null && resourceAccessJson is not null)
                     {
                         using var doc = JsonDocument.Parse(resourceAccessJson);
-                        if (doc.RootElement.TryGetProperty(azp, out var clientAccess) &&
+                        if (doc.RootElement.TryGetProperty(keycloakRolesResource, out var clientAccess) &&
                             clientAccess.TryGetProperty("roles", out var clientRoles))
                         {
                             foreach (var role in clientRoles.EnumerateArray())
