@@ -97,11 +97,11 @@ public sealed class CollectionService : ICollectionService
         {
             foreach (var virtualSlug in policy.GetVirtualSlugs(user))
             {
-                if (existingSlugs.Contains(virtualSlug)) continue;
+                if (!existingSlugs.Add(virtualSlug)) continue;
 
                 var empty = new JsonObject();
                 var enriched = await policy.EnrichAsync(virtualSlug, empty, cancellationToken);
-                var draft = await _drafts.GetItemDraftAsync(key, virtualSlug, userId, cancellationToken);
+                var virtualDraft = await _drafts.GetVirtualDraftAsync(key, virtualSlug, userId, cancellationToken);
                 responses.Add(new CollectionItemResponse(
                     Id: Guid.Empty,
                     CollectionKey: key.ToString(),
@@ -109,18 +109,18 @@ public sealed class CollectionService : ICollectionService
                     Data: enriched,
                     Version: 0,
                     CanEdit: true,
-                    DraftData: ResolveNewDraft(draft?.Data)
+                    DraftData: ResolveNewDraft(virtualDraft?.Data)
                 ));
             }
 
             var newDraft = await _drafts.GetNewDraftAsync(key, userId, cancellationToken);
             var newDraftData = ResolveNewDraft(newDraft?.Data);
-            if (newDraftData is not null)
+            if (newDraftData is not null && (newDraft!.Slug is null || existingSlugs.Add(newDraft.Slug)))
             {
                 responses.Add(new CollectionItemResponse(
                     Id: Guid.Empty,
                     CollectionKey: key.ToString(),
-                    Slug: newDraft!.Slug,
+                    Slug: newDraft.Slug,
                     Data: new JsonObject(),
                     Version: 0,
                     CanEdit: true,
@@ -161,6 +161,7 @@ public sealed class CollectionService : ICollectionService
 
         var utcNow = DateTime.UtcNow;
         var item = await _repository.GetBySlugAsync(key, normalizedSlug, cancellationToken: cancellationToken);
+        var created = item is null;
 
         if (item is null)
         {
@@ -183,6 +184,20 @@ public sealed class CollectionService : ICollectionService
 
         await _repository.SaveChangesAsync(cancellationToken);
         await _drafts.DeleteItemDraftAsync(key, normalizedSlug, updatedBy, cancellationToken);
+
+        if (created)
+        {
+            if (policy.SlugSource == SlugSource.RoleDerived)
+            {
+                await _drafts.DeleteVirtualDraftAsync(key, normalizedSlug, updatedBy, cancellationToken);
+            }
+            else
+            {
+                var pendingNew = await _drafts.GetNewDraftAsync(key, updatedBy, cancellationToken);
+                if (string.Equals(pendingNew?.Slug, normalizedSlug, StringComparison.Ordinal))
+                    await _drafts.DeleteNewDraftAsync(key, updatedBy, cancellationToken);
+            }
+        }
 
         var enriched = await policy.EnrichAsync(item.Slug, item.Data, cancellationToken);
         return ToResponse(item, enriched, canEdit: true);
@@ -268,7 +283,11 @@ public sealed class CollectionService : ICollectionService
         }
 
         var validated = CollectionSchemaValidator.ValidateAndStrip(policy.Schema, request.Data, isDraft: true);
-        await _drafts.SaveNewDraftAsync(key, userId, slug, validated, cancellationToken);
+
+        if (policy.SlugSource == SlugSource.RoleDerived)
+            await _drafts.SaveVirtualDraftAsync(key, slug!, userId, validated, cancellationToken);
+        else
+            await _drafts.SaveNewDraftAsync(key, userId, slug, validated, cancellationToken);
     }
 
     private static JsonNode? ResolveItemDraft(JsonNode published, JsonNode? draft)

@@ -13,6 +13,12 @@ public interface ICollectionDraftService
 
     Task DeleteItemDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default);
 
+    Task SaveVirtualDraftAsync(CollectionKey key, string slug, string userId, JsonObject data, CancellationToken cancellationToken = default);
+
+    Task<CollectionDraft?> GetVirtualDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default);
+
+    Task DeleteVirtualDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default);
+
     Task SaveNewDraftAsync(CollectionKey key, string userId, string? slug, JsonObject data, CancellationToken cancellationToken = default);
 
     Task<CollectionDraft?> GetNewDraftAsync(CollectionKey key, string userId, CancellationToken cancellationToken = default);

@@ -19,6 +19,8 @@ public sealed class RedisCollectionDraftService : ICollectionDraftService
 
     private static string ItemKey(CollectionKey key, string slug, string userId) => $"cd:item:{key}:{slug}:{userId}";
 
+    private static string VirtualKey(CollectionKey key, string slug, string userId) => $"cd:vnew:{key}:{slug}:{userId}";
+
     private static string NewKey(CollectionKey key, string userId) => $"cd:new:{key}:{userId}";
 
     public async Task SaveItemDraftAsync(CollectionKey key, string slug, string userId, JsonObject data, CancellationToken cancellationToken = default)
@@ -39,6 +41,25 @@ public sealed class RedisCollectionDraftService : ICollectionDraftService
 
     public Task DeleteItemDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default)
         => _cache.RemoveAsync(ItemKey(key, slug, userId), cancellationToken);
+
+    public async Task SaveVirtualDraftAsync(CollectionKey key, string slug, string userId, JsonObject data, CancellationToken cancellationToken = default)
+    {
+        var payload = new CollectionDraft(slug, data, DateTime.UtcNow);
+        var json = JsonSerializer.Serialize(payload);
+        await _cache.SetStringAsync(VirtualKey(key, slug, userId), json, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = DraftTtl
+        }, cancellationToken);
+    }
+
+    public async Task<CollectionDraft?> GetVirtualDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default)
+    {
+        var json = await _cache.GetStringAsync(VirtualKey(key, slug, userId), cancellationToken);
+        return json is null ? null : JsonSerializer.Deserialize<CollectionDraft>(json);
+    }
+
+    public Task DeleteVirtualDraftAsync(CollectionKey key, string slug, string userId, CancellationToken cancellationToken = default)
+        => _cache.RemoveAsync(VirtualKey(key, slug, userId), cancellationToken);
 
     public async Task SaveNewDraftAsync(CollectionKey key, string userId, string? slug, JsonObject data, CancellationToken cancellationToken = default)
     {
