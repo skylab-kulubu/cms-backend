@@ -23,6 +23,12 @@ public sealed class TeamsCollectionPolicy : ICollectionPolicy
         new("recruiting", FieldType.Bool, "Alım Durumu", Required: true),
         new("recruitingFor", FieldType.Text, "Pozisyon"),
         new("applyUrl", FieldType.Url, "Başvuru Linki"),
+        new("works", FieldType.ObjectArray, "Çalışmalar", ItemFields: [
+            new("title", FieldType.Text, "Başlık", Required: true),
+            new("image", FieldType.Url, "Görsel"),
+            new("description", FieldType.Text, "Açıklama"),
+            new("tags", FieldType.StringArray, "Etiketler"),
+        ]),
         new("leads", FieldType.StringArray, "Liderler", ReadOnly: true),
         new("memberCount", FieldType.Number, "Üye Sayısı", ReadOnly: true),
     ]);
