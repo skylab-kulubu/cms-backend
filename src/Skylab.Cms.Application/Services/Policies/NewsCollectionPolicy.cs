@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json.Nodes;
 using Skylab.Cms.Application.Contracts.Policies;
 using Skylab.Cms.Application.Contracts.Schemas;
+using Skylab.Cms.Application.Services.Helpers;
 using Skylab.Cms.Domain.Enums;
 
 namespace Skylab.Cms.Application.Services.Policies;
@@ -26,7 +27,9 @@ public sealed class NewsCollectionPolicy : ICollectionPolicy
         new("featured", FieldType.Bool, "Öne Çıkar", Filterable: true),
     ]);
 
-    public bool CanEdit(ClaimsPrincipal user, string slug) => true;
+    public bool CanEdit(ClaimsPrincipal user, string slug) => GroupPathParser.IsPrivileged(user);
+
+    public bool CanCreate(ClaimsPrincipal user) => GroupPathParser.IsPrivileged(user);
 
     public Task<JsonNode> EnrichAsync(string slug, JsonNode data, CancellationToken cancellationToken = default)
         => Task.FromResult(data);
