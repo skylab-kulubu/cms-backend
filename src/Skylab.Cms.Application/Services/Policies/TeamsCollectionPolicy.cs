@@ -35,14 +35,14 @@ public sealed class TeamsCollectionPolicy : ICollectionPolicy
 
     public bool CanEdit(ClaimsPrincipal user, string slug)
     {
-        var leaderSlugs = TeamRoleParser.GetLeaderTeamSlugs(user);
+        var leaderSlugs = GroupPathParser.GetLeaderTeamSlugs(user);
         return leaderSlugs.Contains(slug);
     }
 
     public bool CanCreate(ClaimsPrincipal user) => false;
 
     public IReadOnlyCollection<string> GetVirtualSlugs(ClaimsPrincipal user)
-        => [.. TeamRoleParser.GetLeaderTeamSlugs(user)];
+        => [.. GroupPathParser.GetLeaderTeamSlugs(user)];
 
     public Task<JsonNode> EnrichAsync(string slug, JsonNode data, CancellationToken cancellationToken = default)
     {

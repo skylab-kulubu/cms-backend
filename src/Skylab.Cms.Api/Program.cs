@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Skylab.Cms.Api.Endpoints;
 using Skylab.Cms.Api.Middleware;
 using Skylab.Cms.Application;
+using Skylab.Cms.Application.Services.Helpers;
 using Skylab.Cms.Infrastructure;
 using Skylab.Cms.Infrastructure.Storage;
 
@@ -19,7 +19,6 @@ var keycloakSection = builder.Configuration.GetSection("Keycloak");
 var requireHttpsMetadata = keycloakSection.GetValue("RequireHttpsMetadata", true);
 var keycloakAuthority = keycloakSection["Authority"];
 var keycloakMetadataAddress = keycloakSection["MetadataAddress"];
-var keycloakRolesResource = keycloakSection["RolesResource"] ?? keycloakSection["Audience"];
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -46,42 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (ctx.Principal?.Identity is not ClaimsIdentity identity)
                     return Task.CompletedTask;
 
-                var resourceAccessJson = ctx.Principal.FindFirst("resource_access")?.Value;
-                var realmAccessJson = ctx.Principal.FindFirst("realm_access")?.Value;
-
-                try
-                {
-                    if (keycloakRolesResource is not null && resourceAccessJson is not null)
-                    {
-                        using var doc = JsonDocument.Parse(resourceAccessJson);
-                        if (doc.RootElement.TryGetProperty(keycloakRolesResource, out var clientAccess) &&
-                            clientAccess.TryGetProperty("roles", out var clientRoles))
-                        {
-                            foreach (var role in clientRoles.EnumerateArray())
-                            {
-                                var value = role.GetString();
-                                if (value is not null)
-                                    identity.AddClaim(new Claim(identity.RoleClaimType, value));
-                            }
-                        }
-                    }
-
-                    if (realmAccessJson is not null)
-                    {
-                        using var doc = JsonDocument.Parse(realmAccessJson);
-                        if (doc.RootElement.TryGetProperty("roles", out var realmRoles))
-                        {
-                            foreach (var role in realmRoles.EnumerateArray())
-                            {
-                                var value = role.GetString();
-                                if (value is not null)
-                                    identity.AddClaim(new Claim(identity.RoleClaimType, value));
-                            }
-                        }
-                    }
-                }
-                catch { }
-
+                AzpClientRoleMapper.AddTo(identity, ctx.Principal);
                 return Task.CompletedTask;
             }
         };
