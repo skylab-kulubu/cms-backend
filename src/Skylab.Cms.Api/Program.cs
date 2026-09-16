@@ -9,14 +9,11 @@ using Skylab.Cms.Application;
 using Skylab.Cms.Application.Services.Helpers;
 using Skylab.Cms.Infrastructure;
 using Skylab.Cms.Infrastructure.Storage;
-using Steeltoe.Discovery.Eureka;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-builder.Services.AddEurekaDiscoveryClient();
 
 var keycloakSection = builder.Configuration.GetSection("Keycloak");
 var requireHttpsMetadata = keycloakSection.GetValue("RequireHttpsMetadata", true);
