@@ -7,7 +7,7 @@ COPY src/Skylab.Cms.Application/Skylab.Cms.Application.csproj    src/Skylab.Cms.
 COPY src/Skylab.Cms.Infrastructure/Skylab.Cms.Infrastructure.csproj src/Skylab.Cms.Infrastructure/
 COPY src/Skylab.Cms.Api/Skylab.Cms.Api.csproj                    src/Skylab.Cms.Api/
 
-RUN dotnet restore
+RUN dotnet restore src/Skylab.Cms.Api/Skylab.Cms.Api.csproj
 
 COPY src/ src/
 
