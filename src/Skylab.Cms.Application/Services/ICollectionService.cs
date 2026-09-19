@@ -25,6 +25,12 @@ public interface ICollectionService
 
     Task<CollectionItemResponse?> GetAsync(CollectionKey key, string slug, ClaimsPrincipal user, string userId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CollectionItemResponse>> ListArchivedAsync(CollectionKey key, ClaimsPrincipal user, CancellationToken cancellationToken = default);
+
+    Task<CollectionItemResponse> ArchiveAsync(CollectionKey key, string slug, ClaimsPrincipal user, string updatedBy, CancellationToken cancellationToken = default);
+
+    Task<CollectionItemResponse> RestoreAsync(CollectionKey key, string slug, ClaimsPrincipal user, string updatedBy, CancellationToken cancellationToken = default);
+
     Task<CollectionItemResponse> UpsertAsync(CollectionKey key, string slug, UpsertCollectionItemRequest request, ClaimsPrincipal user, string updatedBy, CancellationToken cancellationToken = default);
 
     Task<CollectionItemResponse> CreateAutoSlugAsync(CollectionKey key, CreateCollectionItemRequest request, ClaimsPrincipal user, string updatedBy, CancellationToken cancellationToken = default);

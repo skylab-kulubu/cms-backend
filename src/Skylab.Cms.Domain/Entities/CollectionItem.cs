@@ -11,6 +11,7 @@ public sealed class CollectionItem : Entity
     public string UpdatedBy { get; private set; } = default!;
     public bool IsArchived { get; private set; }
     public DateTime? ArchivedAt { get; private set; }
+    public string? ArchivedBy { get; private set; }
 
     private CollectionItem() { }
 
@@ -57,6 +58,7 @@ public sealed class CollectionItem : Entity
 
         IsArchived = true;
         ArchivedAt = utcNow;
+        ArchivedBy = updatedBy;
         UpdatedBy = updatedBy;
         UpdatedAt = utcNow;
         Version += 1;
@@ -70,6 +72,7 @@ public sealed class CollectionItem : Entity
 
         IsArchived = false;
         ArchivedAt = null;
+        ArchivedBy = null;
         UpdatedBy = updatedBy;
         UpdatedAt = utcNow;
         Version += 1;

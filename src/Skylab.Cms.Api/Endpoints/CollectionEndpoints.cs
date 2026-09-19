@@ -73,6 +73,12 @@ public static class CollectionEndpoints
             return Results.NoContent();
         });
 
+        group.MapGet("/archived", async (CollectionKey key, HttpContext context, ICollectionService service, CancellationToken ct) =>
+        {
+            var result = await service.ListArchivedAsync(key, context.User, ct);
+            return Results.Ok(result);
+        });
+
         group.MapGet("/{slug}", async (CollectionKey key, string slug, HttpContext context, ICollectionService service, CancellationToken ct) =>
         {
             var isEditor = context.User.IsInRole("cms:access");
@@ -104,6 +110,26 @@ public static class CollectionEndpoints
 
             await service.SaveItemDraftAsync(key, slug, userId, context.User, request, ct);
             return Results.NoContent();
+        });
+
+        group.MapDelete("/{slug}", async (CollectionKey key, string slug, HttpContext context, ICollectionService service, CancellationToken ct) =>
+        {
+            var updatedBy = context.User.GetUserSub();
+            if (string.IsNullOrWhiteSpace(updatedBy))
+                return Results.Unauthorized();
+
+            await service.ArchiveAsync(key, slug, context.User, updatedBy, ct);
+            return Results.NoContent();
+        });
+
+        group.MapPost("/{slug}/restore", async (CollectionKey key, string slug, HttpContext context, ICollectionService service, CancellationToken ct) =>
+        {
+            var updatedBy = context.User.GetUserSub();
+            if (string.IsNullOrWhiteSpace(updatedBy))
+                return Results.Unauthorized();
+
+            var response = await service.RestoreAsync(key, slug, context.User, updatedBy, ct);
+            return Results.Ok(response);
         });
 
         return app;
