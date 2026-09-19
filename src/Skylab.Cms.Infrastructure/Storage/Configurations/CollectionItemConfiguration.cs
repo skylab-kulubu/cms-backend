@@ -32,6 +32,8 @@ internal sealed class CollectionItemConfiguration : IEntityTypeConfiguration<Col
 
         builder.Property(x => x.ArchivedAt);
 
+        builder.Property(x => x.ArchivedBy).HasMaxLength(128);
+
         builder.HasIndex(x => new { x.CollectionKey, x.Slug }).IsUnique();
         builder.HasIndex(x => new { x.CollectionKey, x.IsArchived });
 

@@ -149,6 +149,83 @@ public sealed class CollectionService : ICollectionService
         return ToResponse(item, enriched, policy.CanEdit(user, item.Slug), ResolveItemDraft(item.Data, draft?.Data));
     }
 
+    public async Task<IReadOnlyList<CollectionItemResponse>> ListArchivedAsync(
+        CollectionKey key,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        var policy = _policyResolver.Resolve(key);
+        var items = await _repository.ListAsync(key, includeArchived: true, cancellationToken);
+        var responses = new List<CollectionItemResponse>();
+
+        foreach (var item in items.Where(item => item.IsArchived && policy.CanEdit(user, item.Slug)))
+        {
+            var enriched = await policy.EnrichAsync(item.Slug, item.Data, cancellationToken);
+            responses.Add(ToLifecycleResponse(item, enriched, canEdit: true));
+        }
+
+        return responses;
+    }
+
+    public async Task<CollectionItemResponse> ArchiveAsync(
+        CollectionKey key,
+        string slug,
+        ClaimsPrincipal user,
+        string updatedBy,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = SlugNormalizer.NormalizeBlockPath(slug);
+        var policy = _policyResolver.Resolve(key);
+        var item = await _repository.GetBySlugAsync(key, normalizedSlug, includeArchived: true, cancellationToken)
+            ?? throw new NotFoundException($"Collection item '{key}/{normalizedSlug}' was not found.");
+
+        if (!policy.CanEdit(user, item.Slug))
+            throw new UnauthorizedAccessException($"User cannot archive '{key}/{normalizedSlug}'.");
+
+        if (!item.IsArchived)
+        {
+            item.Archive(updatedBy, DateTime.UtcNow);
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+
+        var enriched = await policy.EnrichAsync(item.Slug, item.Data, cancellationToken);
+        return ToLifecycleResponse(item, enriched, canEdit: true);
+    }
+
+    public async Task<CollectionItemResponse> RestoreAsync(
+        CollectionKey key,
+        string slug,
+        ClaimsPrincipal user,
+        string updatedBy,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = SlugNormalizer.NormalizeBlockPath(slug);
+        var policy = _policyResolver.Resolve(key);
+        var item = await _repository.GetBySlugAsync(key, normalizedSlug, includeArchived: true, cancellationToken)
+            ?? throw new NotFoundException($"Collection item '{key}/{normalizedSlug}' was not found.");
+
+        if (!policy.CanEdit(user, item.Slug))
+            throw new UnauthorizedAccessException($"User cannot restore '{key}/{normalizedSlug}'.");
+
+        if (item.IsArchived)
+        {
+            var conflicts = await _repository.ListAsync(key, includeArchived: true, cancellationToken);
+            if (conflicts.Any(candidate =>
+                    candidate.Id != item.Id
+                    && !candidate.IsArchived
+                    && string.Equals(candidate.Slug, item.Slug, StringComparison.Ordinal)))
+            {
+                throw new ConcurrencyConflictException($"Slug '{item.Slug}' is already in use and cannot be restored.");
+            }
+
+            item.Restore(updatedBy, DateTime.UtcNow);
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+
+        var enriched = await policy.EnrichAsync(item.Slug, item.Data, cancellationToken);
+        return ToLifecycleResponse(item, enriched, canEdit: true);
+    }
+
     public async Task<CollectionItemResponse> UpsertAsync(CollectionKey key, string slug, UpsertCollectionItemRequest request, ClaimsPrincipal user, string updatedBy, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeBlockPath(slug);
@@ -160,8 +237,11 @@ public sealed class CollectionService : ICollectionService
         var validated = CollectionSchemaValidator.ValidateAndStrip(policy.Schema, request.Data);
 
         var utcNow = DateTime.UtcNow;
-        var item = await _repository.GetBySlugAsync(key, normalizedSlug, cancellationToken: cancellationToken);
+        var item = await _repository.GetBySlugAsync(key, normalizedSlug, includeArchived: true, cancellationToken);
         var created = item is null;
+
+        if (item?.IsArchived == true)
+            throw new ConcurrencyConflictException($"Slug '{normalizedSlug}' is archived and reserved; restore it instead of recreating it.");
 
         if (item is null)
         {
@@ -335,5 +415,18 @@ public sealed class CollectionService : ICollectionService
             Version: item.Version,
             CanEdit: canEdit,
             DraftData: draftData
+        );
+
+    private static CollectionItemResponse ToLifecycleResponse(CollectionItem item, JsonNode data, bool? canEdit) =>
+        new(
+            Id: item.Id,
+            CollectionKey: item.CollectionKey.ToString(),
+            Slug: item.Slug,
+            Data: data,
+            Version: item.Version,
+            CanEdit: canEdit,
+            IsArchived: item.IsArchived,
+            ArchivedAt: item.ArchivedAt,
+            ArchivedBy: item.ArchivedBy
         );
 }

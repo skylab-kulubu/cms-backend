@@ -79,6 +79,30 @@ public sealed class ContentService : IContentService
         return new ContentResponse(normalizedSlug, dataBlocks);
     }
 
+    public async Task<IReadOnlyList<BlockResponse>> GetArchivedAsync(
+        string clientId,
+        CancellationToken cancellationToken = default)
+    {
+        var blocks = await _repository.GetByClientAsync(clientId, includeArchived: true, cancellationToken);
+
+        return blocks
+            .Where(block => block.IsArchived)
+            .OrderBy(block => block.Slug)
+            .ThenBy(block => block.SortOrder)
+            .Select(block => new BlockResponse(
+                BlockPath: block.BlockPath,
+                BlockType: block.BlockType.ToString(),
+                Value: block.Value,
+                SortOrder: block.SortOrder,
+                Version: block.Version,
+                Data: null,
+                IsArchived: true,
+                ArchivedAt: block.ArchivedAt,
+                ArchivedBy: block.ArchivedBy,
+                Slug: block.Slug))
+            .ToList();
+    }
+
     public async Task<UpdatePageResponse> UpdatePageAsync(string clientId, UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = SlugNormalizer.NormalizeSlug(request.Slug);

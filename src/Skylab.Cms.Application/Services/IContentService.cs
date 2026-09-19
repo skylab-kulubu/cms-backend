@@ -9,6 +9,8 @@ public interface IContentService
 
     Task<ContentResponse> GetDataBySlugAsync(string clientId, string slug, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<BlockResponse>> GetArchivedAsync(string clientId, CancellationToken cancellationToken = default);
+
     Task<UpdatePageResponse> UpdatePageAsync(string clientId, UpdatePageRequest request, string updatedBy, CancellationToken cancellationToken = default);
 
     Task<SyncResultResponse> SyncAsync(string clientId, IReadOnlyList<SyncManifestRequest> manifests, string syncedBy, CancellationToken cancellationToken = default);

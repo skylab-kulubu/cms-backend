@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Skylab.Cms.Application\Skylab.Cms.Application.csproj" />
     <ProjectReference Include="..\..\src\Skylab.Cms.Domain\Skylab.Cms.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Skylab.Cms.Infrastructure\Skylab.Cms.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

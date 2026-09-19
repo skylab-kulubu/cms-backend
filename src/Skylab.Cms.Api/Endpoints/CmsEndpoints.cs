@@ -43,6 +43,16 @@ public static class CmsEndpoints
             return Results.Ok(response);
         });
 
+        group.MapGet("/content/archived", async (HttpContext context, IContentService service, CancellationToken ct) =>
+        {
+            var clientId = context.User.GetClientId();
+            if (string.IsNullOrWhiteSpace(clientId))
+                return Results.Unauthorized();
+
+            var response = await service.GetArchivedAsync(clientId, ct);
+            return Results.Ok(response);
+        });
+
         group.MapPut("/content", async (HttpContext context, UpdatePageRequest request, IContentService service, CancellationToken ct) =>
         {
             var clientId = context.User.GetClientId();

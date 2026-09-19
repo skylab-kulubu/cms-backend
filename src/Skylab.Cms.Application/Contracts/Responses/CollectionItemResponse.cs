@@ -10,5 +10,8 @@ public sealed record CollectionItemResponse(
     JsonNode Data,
     int Version,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? CanEdit = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonNode? DraftData = null
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonNode? DraftData = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? IsArchived = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTime? ArchivedAt = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ArchivedBy = null
 );
