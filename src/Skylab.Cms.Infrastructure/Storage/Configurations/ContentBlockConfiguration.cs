@@ -38,6 +38,8 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
 
         builder.Property(x => x.ArchivedAt);
 
+        builder.Property(x => x.ArchivedBy).HasMaxLength(128);
+
         builder.HasIndex(x => new { x.ClientId, x.Slug, x.BlockPath }).IsUnique();
 
         builder.HasIndex(x => new { x.ClientId, x.Slug });
