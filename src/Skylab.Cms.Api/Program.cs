@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Skylab.Cms.Api.AccountAccess;
 using Skylab.Cms.Api.Endpoints;
 using Skylab.Cms.Api.Middleware;
 using Skylab.Cms.Application;
@@ -13,7 +14,7 @@ using Skylab.Cms.Infrastructure.Storage;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 var keycloakSection = builder.Configuration.GetSection("Keycloak");
 var requireHttpsMetadata = keycloakSection.GetValue("RequireHttpsMetadata", true);
@@ -86,7 +87,9 @@ using (var scope = app.Services.CreateScope())
 app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
+app.UseAccountAccessGate();
 app.UseAuthorization();
+app.MapAccountAccessHealthEndpoints();
 app.MapCmsEndpoints();
 app.MapCollectionEndpoints();
 
