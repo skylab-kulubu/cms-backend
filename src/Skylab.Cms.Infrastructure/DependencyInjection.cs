@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Skylab.Cms.Application.Contracts.Repositories;
 using Skylab.Cms.Application.Contracts.Services;
+using Skylab.Cms.Infrastructure.AccountAccess;
 using Skylab.Cms.Infrastructure.Cache;
 using Skylab.Cms.Infrastructure.Storage;
 using Skylab.Cms.Infrastructure.Storage.Repositories;
@@ -12,7 +14,10 @@ namespace Skylab.Cms.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment hostEnvironment)
     {
         var connectionString = configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
 
@@ -26,6 +31,8 @@ public static class DependencyInjection
 
         services.AddScoped<IContentBlockRepository, ContentBlockRepository>();
         services.AddScoped<ICollectionItemRepository, CollectionItemRepository>();
+
+        services.AddAccountAccessGate(configuration, hostEnvironment);
 
         var redisConnectionString = configuration.GetConnectionString("Redis") ?? throw new InvalidOperationException("ConnectionStrings:Redis is not configured.");
         services.AddStackExchangeRedisCache(options => options.Configuration = redisConnectionString);
