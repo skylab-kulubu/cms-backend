@@ -13,6 +13,8 @@ public sealed class CmsDbContext : DbContext
 
     public DbSet<CollectionItem> CollectionItems => Set<CollectionItem>();
 
+    public DbSet<AccountErasureReceipt> AccountErasureReceipts => Set<AccountErasureReceipt>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pgcrypto");
