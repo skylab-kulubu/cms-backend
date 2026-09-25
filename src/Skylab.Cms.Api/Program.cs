@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Skylab.Cms.Api.AccountAccess;
+using Skylab.Cms.Api.AccountErasure;
 using Skylab.Cms.Api.Endpoints;
 using Skylab.Cms.Api.Middleware;
 using Skylab.Cms.Application;
@@ -57,7 +58,8 @@ builder.Services.AddAuthorizationBuilder()
     {
         policy.RequireAuthenticatedUser();
         policy.RequireRole("cms:access");
-    });
+    })
+    .AddAccountErasurePolicy();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -85,6 +87,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
+app.UseInternalRouteGuard();
 app.UseCors();
 app.UseAuthentication();
 app.UseAccountAccessGate();
@@ -92,5 +95,8 @@ app.UseAuthorization();
 app.MapAccountAccessHealthEndpoints();
 app.MapCmsEndpoints();
 app.MapCollectionEndpoints();
+app.MapAccountErasureEndpoints();
 
 app.Run();
+
+public partial class Program;
