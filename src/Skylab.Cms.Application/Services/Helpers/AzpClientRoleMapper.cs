@@ -5,23 +5,31 @@ namespace Skylab.Cms.Application.Services.Helpers;
 
 public static class AzpClientRoleMapper
 {
-    public static IReadOnlyList<string> RolesForAzp(string? azp, string? resourceAccessJson)
+    public static IReadOnlyList<string> RolesForAzp(string? azp, string? resourceAccessJson) =>
+        RolesForClient(azp, resourceAccessJson);
+
+    /// <summary>Roles under <c>resource_access.{clientId}.roles</c>, whoever the token was issued to.</summary>
+    public static IReadOnlyList<string> RolesForClient(string? clientId, string? resourceAccessJson)
     {
-        if (string.IsNullOrWhiteSpace(azp) || string.IsNullOrWhiteSpace(resourceAccessJson))
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(resourceAccessJson))
             return [];
 
         try
         {
             using var doc = JsonDocument.Parse(resourceAccessJson);
-            if (!doc.RootElement.TryGetProperty(azp, out var clientAccess))
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty(clientId, out var clientAccess))
                 return [];
-            if (!clientAccess.TryGetProperty("roles", out var clientRoles) ||
+            if (clientAccess.ValueKind != JsonValueKind.Object ||
+                !clientAccess.TryGetProperty("roles", out var clientRoles) ||
                 clientRoles.ValueKind != JsonValueKind.Array)
                 return [];
 
             var roles = new List<string>();
             foreach (var role in clientRoles.EnumerateArray())
             {
+                if (role.ValueKind != JsonValueKind.String)
+                    continue;
                 var value = role.GetString();
                 if (!string.IsNullOrWhiteSpace(value))
                     roles.Add(value);

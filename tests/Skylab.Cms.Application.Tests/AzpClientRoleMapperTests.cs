@@ -43,4 +43,30 @@ public sealed class AzpClientRoleMapperTests
         Assert.Empty(AzpClientRoleMapper.RolesForAzp(null, ResourceAccess));
         Assert.Empty(AzpClientRoleMapper.RolesForAzp("", ResourceAccess));
     }
+
+    [Fact]
+    public void RolesForClient_ReadsTheNamedResourceClient_NotTheAzp()
+    {
+        var erasureToken = """
+            {
+              "core": { "roles": ["cms:account:erase"] },
+              "skycms": { "roles": ["cms:account:erase"] }
+            }
+            """;
+
+        Assert.Equal(["cms:account:erase"], AzpClientRoleMapper.RolesForClient("skycms", erasureToken));
+        Assert.Empty(AzpClientRoleMapper.RolesForClient("core-erasure", erasureToken));
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("not json")]
+    [InlineData("""{ "skycms": "cms:account:erase" }""")]
+    [InlineData("""{ "skycms": { "roles": "cms:account:erase" } }""")]
+    [InlineData("""{ "skycms": { "roles": [1, null, { "role": "cms:account:erase" }] } }""")]
+    public void MalformedResourceAccess_YieldsNoRoles(string resourceAccess)
+    {
+        Assert.Empty(AzpClientRoleMapper.RolesForClient("skycms", resourceAccess));
+        Assert.Empty(AzpClientRoleMapper.RolesForAzp("skycms", resourceAccess));
+    }
 }
