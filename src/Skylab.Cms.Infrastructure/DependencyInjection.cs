@@ -6,6 +6,7 @@ using Npgsql;
 using Skylab.Cms.Application.Contracts.Repositories;
 using Skylab.Cms.Application.Contracts.Services;
 using Skylab.Cms.Infrastructure.AccountAccess;
+using Skylab.Cms.Infrastructure.AccountErasure;
 using Skylab.Cms.Infrastructure.Cache;
 using Skylab.Cms.Infrastructure.Storage;
 using Skylab.Cms.Infrastructure.Storage.Repositories;
@@ -38,6 +39,10 @@ public static class DependencyInjection
         services.AddStackExchangeRedisCache(options => options.Configuration = redisConnectionString);
         services.AddScoped<IDraftService, RedisDraftService>();
         services.AddScoped<ICollectionDraftService, RedisCollectionDraftService>();
+
+        services.AddSingleton(_ => new DraftRedisConnection(redisConnectionString));
+        services.AddSingleton<RedisDraftEraser>();
+        services.AddScoped<IAccountErasureService, AccountErasureService>();
 
         return services;
     }
